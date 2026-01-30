@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+generator prismabox {
+  provider                    = "prismabox"
+  typeboxImportDependencyName = "elysia"
+  typeboxImportVariableName   = "t"
+  inputModel                  = true
+  output                      = "../src/generated/prismabox"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =======================
+// ENUMS
+// =======================
+
+enum UserRole {
+  USER
+  AGENT
+  LEAD_AGENT
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum SenderRole {
+  USER
+  AGENT
+}
+
+enum Sentiment {
+  NEGATIVE
+  NEUTRAL
+  POSITIVE
+}
+
+enum Gender {
+  MALE 
+  FEMALE
+}
+
+enum ComplaintCategory {
+  BUG // 3
+  PAYMENT // 4
+  ACCOUNT  // 2
+  HARASSMENT // 5
+  OTHER // 1
+}
+
+// =======================
+// MODELS
+// =======================
+
+model User {
+  id             Int       @id @default(autoincrement())
+  email          String    @unique
+  passwordHash   String
+  role           UserRole
+
+  birthDate      DateTime
+  gender         Gender
+
+  complaints     Complaint[] @relation("UserComplaints")
+  assignedCases  Complaint[] @relation("AssignedAgent")
+  messages       Message[]
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Complaint {
+  id                 Int              @id @default(autoincrement())
+  userId             Int
+  assignedAgentId    Int?
+
+  status             ComplaintStatus  @default(OPEN)
+  category           ComplaintCategory? 
+
+  priority           Int?              // 1 (low) to 5 (high). Inserted manually with code
+
+  createdAt          DateTime          @default(now())
+  resolvedAt         DateTime?
+  resolvedByUserAt   DateTime?
+
+  user               User              @relation("UserComplaints", fields: [userId], references: [id])
+  assignedAgent      User?             @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
+
+  messages           Message[]
+  result             ComplaintResult?
+
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+}
+
+model Message {
+  id            Int        @id @default(autoincrement())
+  complaintId   Int
+  senderId      Int
+  senderRole    SenderRole
+
+  content       String
+  createdAt     DateTime   @default(now())
+
+  complaint     Complaint  @relation(fields: [complaintId], references: [id])
+  sender        User       @relation(fields: [senderId], references: [id])
+
+  @@index([complaintId])
+}
+
+model ComplaintResult {
+  id                 Int        @id @default(autoincrement())
+  complaintId        Int        @unique
+
+  classification     String?    // AI internal label
+  suggestedResponse  String?
+
+  summary            String?
+
+  sentiment          Sentiment?
+
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  complaint          Complaint  @relation(fields: [complaintId], references: [id])
+}
