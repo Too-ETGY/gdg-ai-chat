@@ -1,18 +1,16 @@
 import {Elysia, t} from 'elysia';
 import { prisma } from '../lib/prisma';
-import { authMiddleware } from '../middleware/authMiddleware';
-
-// import { SentimentTrendsResponseSchema } from '../schemas';
-// import { getSentimentTrends } from '../controllers/analyticsController';
-
-// export const analyticsRoutes = new Elysia({ prefix: '/analytics' })
-//   .use(authMiddleware)
-//   .get('/sentiment', getSentimentTrends, {
-//     response: SentimentTrendsResponseSchema
-//   });
+import { authMiddleware, jwtPlugin } from '../middleware/authMiddleware';
 
 export const analyticsRoutes = new Elysia({ prefix: '/analytics' })
-  .use(authMiddleware)
+  .use(jwtPlugin)
+  .derive(authMiddleware)
+
+  .get('/me', ({ user }) => {
+    // console.log('User in /me:', user);  // Should now show the user object
+    if (!user) throw new Error('Unauthorized1');
+    return { id: user.id, role: user.role };
+  })  
 
   .get(
     '/sentiment',

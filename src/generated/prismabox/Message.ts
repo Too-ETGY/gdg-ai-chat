@@ -51,6 +51,7 @@ export const MessageRelations = t.Object(
     sender: t.Object(
       {
         id: t.Integer(),
+        name: t.String(),
         email: t.String(),
         passwordHash: t.String(),
         role: t.Union(

@@ -38,6 +38,7 @@ export const ComplaintRelations = t.Object(
     user: t.Object(
       {
         id: t.Integer(),
+        name: t.String(),
         email: t.String(),
         passwordHash: t.String(),
         role: t.Union(
@@ -57,6 +58,7 @@ export const ComplaintRelations = t.Object(
       t.Object(
         {
           id: t.Integer(),
+          name: t.String(),
           email: t.String(),
           passwordHash: t.String(),
           role: t.Union(

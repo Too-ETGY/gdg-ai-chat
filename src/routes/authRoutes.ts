@@ -12,4 +12,8 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
     detail: { summary: 'Login user' },
     body: UserLoginSchema,
     response: AuthResponseSchema
+  })
+  .post('/logout', ({ set }) => {
+    set.status = 200;
+    return { message: 'Logged out' };
   });

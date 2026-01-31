@@ -7,6 +7,7 @@ import { __nullable__ } from "./__nullable__";
 export const UserPlain = t.Object(
   {
     id: t.Integer(),
+    name: t.String(),
     email: t.String(),
     passwordHash: t.String(),
     role: t.Union(
@@ -117,11 +118,14 @@ export const UserRelations = t.Object(
 
 export const UserPlainInputCreate = t.Object(
   {
+    name: t.String(),
     email: t.String(),
     passwordHash: t.String(),
-    role: t.Union(
-      [t.Literal("USER"), t.Literal("AGENT"), t.Literal("LEAD_AGENT")],
-      { additionalProperties: false },
+    role: t.Optional(
+      t.Union(
+        [t.Literal("USER"), t.Literal("AGENT"), t.Literal("LEAD_AGENT")],
+        { additionalProperties: false },
+      ),
     ),
     birthDate: t.Date(),
     gender: t.Union([t.Literal("MALE"), t.Literal("FEMALE")], {
@@ -133,6 +137,7 @@ export const UserPlainInputCreate = t.Object(
 
 export const UserPlainInputUpdate = t.Object(
   {
+    name: t.Optional(t.String()),
     email: t.Optional(t.String()),
     passwordHash: t.Optional(t.String()),
     role: t.Optional(
@@ -297,6 +302,7 @@ export const UserWhere = t.Partial(
           NOT: t.Union([Self, t.Array(Self, { additionalProperties: false })]),
           OR: t.Array(Self, { additionalProperties: false }),
           id: t.Integer(),
+          name: t.String(),
           email: t.String(),
           passwordHash: t.String(),
           role: t.Union(
@@ -349,6 +355,7 @@ export const UserWhereUnique = t.Recursive(
           t.Object(
             {
               id: t.Integer(),
+              name: t.String(),
               email: t.String(),
               passwordHash: t.String(),
               role: t.Union(
@@ -379,6 +386,7 @@ export const UserSelect = t.Partial(
   t.Object(
     {
       id: t.Boolean(),
+      name: t.Boolean(),
       email: t.Boolean(),
       passwordHash: t.Boolean(),
       role: t.Boolean(),
@@ -413,6 +421,9 @@ export const UserOrderBy = t.Partial(
   t.Object(
     {
       id: t.Union([t.Literal("asc"), t.Literal("desc")], {
+        additionalProperties: false,
+      }),
+      name: t.Union([t.Literal("asc"), t.Literal("desc")], {
         additionalProperties: false,
       }),
       email: t.Union([t.Literal("asc"), t.Literal("desc")], {

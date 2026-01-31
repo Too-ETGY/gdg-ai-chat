@@ -5,6 +5,7 @@ import { authRoutes } from './routes/authRoutes';
 import { analyticsRoutes } from './routes/analyticsRoutes';
 import { complaintRoutes } from './routes/complaintsRoutes';
 import { chatRoutes } from './routes/chatRoutes';
+import { startCleanupJob } from './servives/chatCleanUp';
 
 const app = new Elysia()
   .use(swagger({ path: '/docs' }))  // OpenAPI docs at /docs
@@ -14,5 +15,8 @@ const app = new Elysia()
   .use(complaintRoutes)
   .use(chatRoutes)
   .listen(3000);
+
+// Start cleanup job (auto-resolve + message deletion)
+startCleanupJob();
 
 console.log('Server running on http://localhost:3000');
