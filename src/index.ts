@@ -1,10 +1,18 @@
 import { Elysia } from 'elysia';
 import { swagger } from '@elysiajs/swagger';
 import { cors } from '@elysiajs/cors';
+import { authRoutes } from './routes/authRoutes';
+import { analyticsRoutes } from './routes/analyticsRoutes';
+import { complaintRoutes } from './routes/complaintsRoutes';
+import { chatRoutes } from './routes/chatRoutes';
 
 const app = new Elysia()
   .use(swagger({ path: '/docs' }))  // OpenAPI docs at /docs
   .use(cors())
+  .use(authRoutes)
+  .use(analyticsRoutes)
+  .use(complaintRoutes)
+  .use(chatRoutes)
   .listen(3000);
 
 console.log('Server running on http://localhost:3000');
