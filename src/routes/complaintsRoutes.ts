@@ -1,6 +1,7 @@
 import {Elysia, t} from 'elysia';
 import { prisma } from '../lib/prisma';
 import { authMiddleware, jwtPlugin, JwtUser } from '../middleware/authMiddleware';
+import { analyzeResolution } from '../services/aiService';
 import { 
   ComplaintCreateSchema, 
   ComplaintQuerySchema, 
@@ -17,7 +18,6 @@ export const complaintRoutes = new Elysia({ prefix: '/complaints' })
     const { body, user } = ctx;
     if (!user || user.role !== 'USER') throw new Error('Only users can create complaints');
 
-    // Define priority mapping
     const categoryPriorityMap: Record<string, number> = {
       BUG: 3,
       PAYMENT: 4,
@@ -26,7 +26,6 @@ export const complaintRoutes = new Elysia({ prefix: '/complaints' })
       OTHER: 1
     };
 
-    // Default to OTHER if no category provided
     const category = body.category || 'OTHER';
     const priority = categoryPriorityMap[category];
 
@@ -87,30 +86,31 @@ export const complaintRoutes = new Elysia({ prefix: '/complaints' })
     if (!user || user.role !== 'USER') {
       throw new Error('Forbidden: Only users can resolve their own complaints');
     }
+
     const complaintId = parseInt(params.id);
-    // Find the complaint
+
     const complaint = await prisma.complaint.findUnique({
       where: { id: complaintId },
       select: { 
         id: true,
         userId: true, 
         status: true,
-        resolvedAt: true
+        resolvedAt: true,
+        category: true
       }
     });
-    if (!complaint) {
-      throw new Error('Complaint not found');
-    }
-    // Check if user owns this complaint
+
+    if (!complaint) throw new Error('Complaint not found');
+
     if (complaint.userId !== user.id) {
       throw new Error('Forbidden: You can only resolve your own complaints');
     }
-    // Check if already resolved
+
     if (complaint.status === 'RESOLVED') {
       throw new Error('Complaint is already resolved');
     }
 
-    // Get all messages before they're deleted (for AI analysis)
+    // Fetch all messages for AI analysis before resolving
     const messages = await prisma.message.findMany({
       where: { complaintId },
       orderBy: { createdAt: 'asc' },
@@ -121,31 +121,30 @@ export const complaintRoutes = new Elysia({ prefix: '/complaints' })
       }
     });
 
-    // TODO: Replace with actual AI analysis
-    // For now, mock the AI results
-    const aiAnalysis = {
-      classification: 'User Resolved',
-      summary: `Complaint resolved by user. Total messages: ${messages.length}`,
-      sentiment: (messages.length > 0 ? 'POSITIVE' : 'NEUTRAL') as 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE',
-    };
+    // Run AI analysis on the full conversation
+    const aiAnalysis = await analyzeResolution(
+      messages.map(m => ({ senderRole: m.senderRole, content: m.content })),
+      complaint.category ?? null,
+      'USER'
+    );
 
-    // Create ComplaintResult to preserve AI analysis
+    // Persist AI analysis in ComplaintResult
     const result = await prisma.complaintResult.create({
       data: {
         complaintId,
         classification: aiAnalysis.classification,
         summary: aiAnalysis.summary,
-        sentiment: aiAnalysis.sentiment ?? 'NEUTRAL',
+        sentiment: aiAnalysis.sentiment,
       }
     });
 
-    // Update complaint to resolved
+    // Mark complaint as resolved by user
     const updated = await prisma.complaint.update({
       where: { id: complaintId },
       data: {
         status: 'RESOLVED',
-        resolvedAt: null,  // System sets resolvedAt
-        resolvedByUserAt: new Date()  // Track when user resolved it themselves
+        resolvedAt: null,
+        resolvedByUserAt: new Date()
       }
     });
 
@@ -184,8 +183,8 @@ export const complaintRoutes = new Elysia({ prefix: '/complaints' })
       where: { id: complaintId },
       data: { 
         assignedAgentId: user.id,
-        status: 'IN_PROGRESS'  // Update status on assignment
-       }
+        status: 'IN_PROGRESS'
+      }
     });
 
     return { message: 'Complaint assigned to you' };
@@ -212,12 +211,11 @@ export const complaintRoutes = new Elysia({ prefix: '/complaints' })
       throw new Error('Forbidden: Not your complaint');
     }
 
-    // Gatekeep for agents: Only access if assigned to them
     if (['AGENT', 'LEAD_AGENT'].includes(user.role) && complaint.assignedAgentId !== user.id) {
       throw new Error('Forbidden: Not your assigned complaint');
     }
 
-    return complaint;  // Direct object
+    return complaint;
   }, {
     detail: { summary: 'Get complaint details (with access checks)' },
     params: t.Object({ id: t.String() }),

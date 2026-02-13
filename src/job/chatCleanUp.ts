@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma';
+import { analyzeResolution } from '../services/aiService';
 
 /**
  * Delete messages older than 24 hours
@@ -59,12 +60,12 @@ export async function autoResolveOldComplaints() {
     for (const complaint of oldComplaints) {
       // Create ComplaintResult if it doesn't exist
       if (!complaint.result) {
-        const aiAnalysis = {
-          classification: 'Auto-Resolved (24h timeout)',
-          summary: `Complaint auto-resolved after 24 hours. Total messages: ${complaint.messages.length}`,
-          sentiment: complaint.messages.length > 0 ? 'NEUTRAL' : 'NEGATIVE',
-          suggestedResponse: null
-        };
+        // Run AI analysis on this complaint's conversation
+        const aiAnalysis = await analyzeResolution(
+          complaint.messages.map(m => ({ senderRole: m.senderRole, content: m.content })),
+          complaint.category ?? null,
+          'SYSTEM'
+        );
 
         await prisma.complaintResult.create({
           data: {

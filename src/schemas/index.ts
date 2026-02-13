@@ -22,11 +22,11 @@ export const UserLoginSchema = t.Object({
 // Response-specific schemas (omit sensitive/private fields for security)
 export const UserResponseSchema = t.Object({
   id: t.Number(),
-  name: t.String(),  // Add this - it's missing
+  name: t.String(),
   email: t.String(),
-  role: UserRole,  // Remove t.Enum()
+  role: UserRole,
   birthDate: t.Date(),
-  gender: Gender,  // Remove t.Enum()
+  gender: Gender,
   createdAt: t.Date(),
   updatedAt: t.Date()
 });
@@ -42,7 +42,7 @@ export const AuthResponseSchema = t.Object({
 
 // Complaint Schemas
 export const ComplaintCreateSchema = t.Object({
-  category: t.Optional(ComplaintCategory),  // Optional on create
+  category: t.Optional(ComplaintCategory),
 });
 
 export const ComplaintQuerySchema = t.Object({
@@ -50,7 +50,7 @@ export const ComplaintQuerySchema = t.Object({
   priority: t.Optional(t.Number({ minimum: 1, maximum: 5 }))
 });
 
-export const ComplaintAssignSchema = t.Object({});  // No body needed, just POST
+export const ComplaintAssignSchema = t.Object({});
 
 // Custom partial for ComplaintResult (omits 'complaint' to avoid circularity in responses)
 export const ComplaintResultSchema = t.Object({
@@ -61,15 +61,14 @@ export const ComplaintResultSchema = t.Object({
   sentiment: t.Optional(Sentiment),
   createdAt: t.Date(),
   updatedAt: t.Date()
-  // Note: 'complaint' field omitted as it's not included in the Prisma query
 });
 
 export const ComplaintResultResponseSchema = t.Object({
   id: t.Number(),
   complaintId: t.Number(),
-  classification: __nullable__(t.String()),  // Nullable
-  summary: __nullable__(t.String()),  // Nullable
-  sentiment: __nullable__(Sentiment),  // Enum + nullable
+  classification: __nullable__(t.String()),
+  summary: __nullable__(t.String()),
+  sentiment: __nullable__(Sentiment),
   createdAt: t.Date(),
   updatedAt: t.Date()
 });
@@ -78,60 +77,60 @@ export const MessageResponseSchema = t.Object({
   id: t.Number(),
   complaintId: t.Number(),
   senderId: t.Number(),
-  senderRole: SenderRole,  // Use the generated Union directly
+  senderRole: SenderRole,
   content: t.String(),
   createdAt: t.Date()
 });
 
-// Updated to match Prisma query with includes (user, assignedAgent, messages, result)
 export const ComplaintResponseSchema = t.Object({
   id: t.Number(),
   userId: t.Number(),
-  assignedAgentId: __nullable__(t.Number()),  // Nullable
-  status: ComplaintStatus,  // Enum
-  category: __nullable__(ComplaintCategory),  // Enum + nullable
-  priority: __nullable__(t.Number()),  // Nullable
+  assignedAgentId: __nullable__(t.Number()),
+  status: ComplaintStatus,
+  category: __nullable__(ComplaintCategory),
+  priority: __nullable__(t.Number()),
   createdAt: t.Date(),
-  resolvedAt: __nullable__(t.Date()),  // Nullable
-  resolvedByUserAt: __nullable__(t.Date()),  // Nullable
+  resolvedAt: __nullable__(t.Date()),
+  resolvedByUserAt: __nullable__(t.Date()),
   user: UserResponseSchema,
-  assignedAgent: __nullable__(UserResponseSchema),  // Nullable
+  assignedAgent: __nullable__(UserResponseSchema),
   messages: t.Array(MessageResponseSchema),
-  result: __nullable__(ComplaintResultResponseSchema)  // Nullable
+  result: __nullable__(ComplaintResultResponseSchema)
 });
 
-// List for inbox
 export const ComplaintListResponseSchema = t.Array(ComplaintResponseSchema);
 
-// AI Schemas (placeholders, responses are mocks for now)
-export const ClassifyResponseSchema = t.Object({
-  classification: t.String()
-});
-
-export const SummarizeResponseSchema = t.Object({
-  summary: t.String()
-});
-
-export const SuggestResponseSchema = t.Object({
-  suggestion: t.String()
-});
-
+// ─────────────────────────────────────────────
 // Analytics Schemas
-export const SentimentTrendsResponseSchema = t.Object({
-  trends: t.Record(t.String(), t.Number())  // e.g., { POSITIVE: 10, NEGATIVE: 5 }
+// ─────────────────────────────────────────────
+
+export const AnalyticsDailyEntrySchema = t.Object({
+  date:     t.String(),
+  created:  t.Number(),
+  resolved: t.Number()
 });
 
-// Chat Schemas (for WS message payloads)
-export const ChatMessageSchema = t.Object({
-  type: t.Literal('message'),
-  content: t.String()
+export const AnalyticsTodaySchema = t.Object({
+  total:       t.Number(),
+  OPEN:        t.Number(),
+  IN_PROGRESS: t.Number(),
+  RESOLVED:    t.Number()
 });
 
-export const ChatBroadcastSchema = t.Object({
-  type: t.Union([t.Literal('message'), t.Literal('userJoined'), t.Literal('userLeft')]),
-  id: t.Optional(t.Number()),  // For messages
-  sender: t.Optional(t.String()),  // USER or AGENT
-  content: t.Optional(t.String()),
-  createdAt: t.Optional(t.String({ format: 'date-time' })),
-  userId: t.Optional(t.Number())  // For joins/leaves
+export const AnalyticsSentimentCountsSchema = t.Object({
+  POSITIVE: t.Number(),
+  NEUTRAL:  t.Number(),
+  NEGATIVE: t.Number()
+});
+
+export const AnalyticsSentimentSchema = t.Object({
+  total:      t.Number(),
+  counts:     AnalyticsSentimentCountsSchema,
+  percentage: AnalyticsSentimentCountsSchema
+});
+
+export const AnalyticsResponseSchema = t.Object({
+  dailyChart: t.Array(AnalyticsDailyEntrySchema),
+  today:      AnalyticsTodaySchema,
+  sentiment:  AnalyticsSentimentSchema
 });

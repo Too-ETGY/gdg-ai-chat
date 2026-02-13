@@ -5,7 +5,7 @@ import { authRoutes } from './routes/authRoutes';
 import { analyticsRoutes } from './routes/analyticsRoutes';
 import { complaintRoutes } from './routes/complaintsRoutes';
 import { chatRoutes } from './routes/chatRoutes';
-import { startCleanupJob } from './services/chatCleanUp';
+import { startCleanupJob } from './job/chatCleanUp';
 
 const app = new Elysia()
   .use(swagger({ path: '/docs' }))  // OpenAPI docs at /docs

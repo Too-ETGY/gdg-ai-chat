@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { prisma } from '../lib/prisma';
 import { jwtPlugin, authMiddleware } from '../middleware/authMiddleware';
+import { summarizeMessages } from '../services/aiService';
 
 export const chatRoutes = new Elysia({ prefix: '/chat' })
   .use(jwtPlugin)
@@ -34,16 +35,12 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
 
     await prisma.message.delete({ where: { id: messageId } });
 
-    // Notify everyone in the room about the deletion
-    const roomChannel = `complaint:${complaintId}`;
-
     return { message: 'Message deleted', messageId };
   }, {
     detail: { summary: 'Delete a message (sender only)' },
     params: t.Object({ complaintId: t.String(), messageId: t.String() })
   })
 
-  // POST: Summarize selected messages (AGENT/LEAD_AGENT only, stateless)
   // POST: Summarize selected messages + get suggested response (AGENT/LEAD_AGENT only, stateless)
   .post('/:complaintId/summarize', async ({ params, body, user }) => {
     if (!user || !['AGENT', 'LEAD_AGENT'].includes(user.role)) {
@@ -82,21 +79,15 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
 
     if (messages.length === 0) throw new Error('No messages found to summarize');
 
-    // TODO: Replace both with real AI calls
-
-    // Mock summary
-    const formattedMessages = messages
-      .map(m => `[${m.senderRole}]: ${m.content}`)
-      .join('\n');
-
-    const summary = `Mock summary of ${messages.length} messages: ${formattedMessages.slice(0, 200)}...`;
-
-    // Mock suggested response (based on summary + category)
-    const suggestedResponse = `Mock suggested response for ${complaint.category} issue: "Thank you for reaching out. Based on your issue, I recommend the following steps to resolve this matter..."`;
+    // Call AI service
+    const { summary, suggestedResponses } = await summarizeMessages(
+      messages.map(m => ({ senderRole: m.senderRole, content: m.content })),
+      complaint.category ?? null
+    );
 
     return {
       summary,
-      suggestedResponse,
+      suggestedResponses,
       messageCount: messages.length,
       messageIds: messages.map(m => m.id)
     };
@@ -107,7 +98,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       messageIds: t.Optional(t.Array(t.Number()))  // Empty = summarize all messages
     })
   })
-  
+
   // WebSocket: Real-time chat per complaint
   // Connect: ws://localhost:3000/chat/:complaintId/ws
   // History is sent automatically on connect
@@ -260,7 +251,6 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
           return;
         }
 
-        // Find the message
         const message = await prisma.message.findUnique({
           where: { id: body.messageId },
           select: { id: true, complaintId: true, senderId: true }
@@ -283,7 +273,6 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
 
         await prisma.message.delete({ where: { id: body.messageId } });
 
-        // Broadcast deletion to everyone including sender
         const outgoing = JSON.stringify({
           type: 'messageDeleted',
           messageId: body.messageId,

@@ -17,6 +17,10 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
   
   .use(jwtPlugin)
   .derive(authMiddleware)
+  .get('/me', ({ user }) => {
+    if (!user) throw new Error('Unauthorized');
+    return { id: user.id, role: user.role };
+  })
   .post('/logout', ({ user, set }) => {
     if (!user) {
       set.status = 401;
