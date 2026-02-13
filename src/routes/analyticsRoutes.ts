@@ -88,7 +88,7 @@ export const analyticsRoutes = new Elysia({ prefix: '/analytics' })
     const todayByStatus = { OPEN: 0, IN_PROGRESS: 0, RESOLVED: 0 };
     let todayTotal = 0;
     for (const row of todayComplaints) {
-      todayByStatus[row.status] = row._count.status;
+      todayByStatus[row.status as 'OPEN' | 'IN_PROGRESS' | 'RESOLVED'] = row._count.status;
       todayTotal += row._count.status;
     }
 
