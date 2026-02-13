@@ -7,9 +7,6 @@ import {
   ComplaintAssignSchema, 
   ComplaintResponseSchema, 
   ComplaintListResponseSchema, 
-  ClassifyResponseSchema, 
-  SummarizeResponseSchema, 
-  SuggestResponseSchema 
 } from '../schemas';
 
 export const complaintRoutes = new Elysia({ prefix: '/complaints' })
@@ -130,7 +127,6 @@ export const complaintRoutes = new Elysia({ prefix: '/complaints' })
       classification: 'User Resolved',
       summary: `Complaint resolved by user. Total messages: ${messages.length}`,
       sentiment: (messages.length > 0 ? 'POSITIVE' : 'NEUTRAL') as 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE',
-      suggestedResponse: null
     };
 
     // Create ComplaintResult to preserve AI analysis
@@ -140,7 +136,6 @@ export const complaintRoutes = new Elysia({ prefix: '/complaints' })
         classification: aiAnalysis.classification,
         summary: aiAnalysis.summary,
         sentiment: aiAnalysis.sentiment ?? 'NEUTRAL',
-        suggestedResponse: aiAnalysis.suggestedResponse
       }
     });
 
@@ -227,37 +222,4 @@ export const complaintRoutes = new Elysia({ prefix: '/complaints' })
     detail: { summary: 'Get complaint details (with access checks)' },
     params: t.Object({ id: t.String() }),
     response: ComplaintResponseSchema
-  })
-
-  .post('/:id/classify', async (ctx) => {
-    const { user } = ctx;
-    if (!user || !['AGENT', 'LEAD_AGENT'].includes(user.role)) throw new Error('Forbidden');
-
-    return { classification: 'Bug Report' };  // Mock
-  }, {
-    detail: { summary: 'Classify complaint (AGENT/LEAD_AGENT only)' },
-    params: t.Object({ id: t.String() }),
-    response: ClassifyResponseSchema
-  })
-
-  .post('/:id/summarize', async (ctx) => {
-    const { user } = ctx;
-    if (!user || !['AGENT', 'LEAD_AGENT'].includes(user.role)) throw new Error('Forbidden');
-
-    return { summary: 'This is a summary of the complaint.' };  // Mock
-  }, {
-    detail: { summary: 'Summarize complaint (AGENT/LEAD_AGENT only)' },
-    params: t.Object({ id: t.String() }),
-    response: SummarizeResponseSchema
-  })
-
-  .post('/:id/suggest', async (ctx) => {
-    const { user } = ctx;
-    if (!user || !['AGENT', 'LEAD_AGENT'].includes(user.role)) throw new Error('Forbidden');
-
-    return { suggestion: 'Suggested response draft.' };  // Mock
-  }, {
-    detail: { summary: 'Suggest response (AGENT/LEAD_AGENT only)' },
-    params: t.Object({ id: t.String() }),
-    response: SuggestResponseSchema
   });

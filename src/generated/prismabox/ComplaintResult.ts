@@ -9,7 +9,6 @@ export const ComplaintResultPlain = t.Object(
     id: t.Integer(),
     complaintId: t.Integer(),
     classification: __nullable__(t.String()),
-    suggestedResponse: __nullable__(t.String()),
     summary: __nullable__(t.String()),
     sentiment: __nullable__(
       t.Union(
@@ -60,7 +59,6 @@ export const ComplaintResultRelations = t.Object(
 export const ComplaintResultPlainInputCreate = t.Object(
   {
     classification: t.Optional(__nullable__(t.String())),
-    suggestedResponse: t.Optional(__nullable__(t.String())),
     summary: t.Optional(__nullable__(t.String())),
     sentiment: t.Optional(
       __nullable__(
@@ -77,7 +75,6 @@ export const ComplaintResultPlainInputCreate = t.Object(
 export const ComplaintResultPlainInputUpdate = t.Object(
   {
     classification: t.Optional(__nullable__(t.String())),
-    suggestedResponse: t.Optional(__nullable__(t.String())),
     summary: t.Optional(__nullable__(t.String())),
     sentiment: t.Optional(
       __nullable__(
@@ -138,7 +135,6 @@ export const ComplaintResultWhere = t.Partial(
           id: t.Integer(),
           complaintId: t.Integer(),
           classification: t.String(),
-          suggestedResponse: t.String(),
           summary: t.String(),
           sentiment: t.Union(
             [
@@ -195,7 +191,6 @@ export const ComplaintResultWhereUnique = t.Recursive(
               id: t.Integer(),
               complaintId: t.Integer(),
               classification: t.String(),
-              suggestedResponse: t.String(),
               summary: t.String(),
               sentiment: t.Union(
                 [
@@ -223,7 +218,6 @@ export const ComplaintResultSelect = t.Partial(
       id: t.Boolean(),
       complaintId: t.Boolean(),
       classification: t.Boolean(),
-      suggestedResponse: t.Boolean(),
       summary: t.Boolean(),
       sentiment: t.Boolean(),
       createdAt: t.Boolean(),
@@ -252,9 +246,6 @@ export const ComplaintResultOrderBy = t.Partial(
         additionalProperties: false,
       }),
       classification: t.Union([t.Literal("asc"), t.Literal("desc")], {
-        additionalProperties: false,
-      }),
-      suggestedResponse: t.Union([t.Literal("asc"), t.Literal("desc")], {
         additionalProperties: false,
       }),
       summary: t.Union([t.Literal("asc"), t.Literal("desc")], {

@@ -97,7 +97,6 @@ export const ComplaintRelations = t.Object(
           id: t.Integer(),
           complaintId: t.Integer(),
           classification: __nullable__(t.String()),
-          suggestedResponse: __nullable__(t.String()),
           summary: __nullable__(t.String()),
           sentiment: __nullable__(
             t.Union(

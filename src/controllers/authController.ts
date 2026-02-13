@@ -6,9 +6,6 @@ import { UserRegisterSchema, UserLoginSchema } from '../schemas';
 const JWT_SECRET = process.env.JWT_SECRET!;
 
 export const register = async ({ body }: { body: typeof UserRegisterSchema.static }) => {
-  // if (!['USER', 'AGENT', 'LEAD_AGENT'].includes(body.role)) {
-  //   throw new Error('Invalid role');
-  // }
 
   const existingUser = await prisma.user.findUnique({ where: { email: body.email } });
   if (existingUser) {
@@ -22,7 +19,6 @@ export const register = async ({ body }: { body: typeof UserRegisterSchema.stati
       name: body.name,
       email: body.email,
       passwordHash,
-      // role: body.role,
       birthDate: new Date(body.birthDate),
       gender: body.gender
     }

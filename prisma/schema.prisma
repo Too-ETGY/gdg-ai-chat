@@ -127,8 +127,7 @@ model ComplaintResult {
   id                 Int        @id @default(autoincrement())
   complaintId        Int        @unique
 
-  classification     String?    // AI internal label
-  suggestedResponse  String?
+  classification     String?    
 
   summary            String?
 

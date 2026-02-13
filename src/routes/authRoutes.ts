@@ -1,6 +1,7 @@
 import {Elysia, t} from 'elysia';
 import { register, login } from '../controllers/authController';
 import { UserRegisterSchema, UserLoginSchema, AuthResponseSchema } from '../schemas';
+import { authMiddleware, jwtPlugin } from '../middleware/authMiddleware';
 
 export const authRoutes = new Elysia({ prefix: '/auth' })
   .post('/register', register, {
@@ -13,7 +14,17 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
     body: UserLoginSchema,
     response: AuthResponseSchema
   })
-  .post('/logout', ({ set }) => {
+  
+  .use(jwtPlugin)
+  .derive(authMiddleware)
+  .post('/logout', ({ user, set }) => {
+    if (!user) {
+      set.status = 401;
+      return { message: 'Not logged in' };
+    }
     set.status = 200;
-    return { message: 'Logged out' };
+    return { message: 'Logged out successfully' };
+  }, {
+    detail: { summary: 'Logout user' },
+    response: t.Object({ message: t.String() })
   });

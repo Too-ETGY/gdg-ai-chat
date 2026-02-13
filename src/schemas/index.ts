@@ -52,20 +52,11 @@ export const ComplaintQuerySchema = t.Object({
 
 export const ComplaintAssignSchema = t.Object({});  // No body needed, just POST
 
-// export const ComplaintResponseSchema = t.Object({
-//   ...Complaint.properties,  // Spread generated Complaint schema
-//   messages: t.Array(Message),  // Include messages
-//   result: t.Optional(ComplaintResult)  // Include AI result if exists
-// });
-
-// export const ComplaintListResponseSchema = t.Array(ComplaintResponseSchema);  // For inbox
-
 // Custom partial for ComplaintResult (omits 'complaint' to avoid circularity in responses)
 export const ComplaintResultSchema = t.Object({
   id: t.Number(),
   complaintId: t.Number(),
   classification: t.Optional(t.String()),
-  suggestedResponse: t.Optional(t.String()),
   summary: t.Optional(t.String()),
   sentiment: t.Optional(Sentiment),
   createdAt: t.Date(),
@@ -77,7 +68,6 @@ export const ComplaintResultResponseSchema = t.Object({
   id: t.Number(),
   complaintId: t.Number(),
   classification: __nullable__(t.String()),  // Nullable
-  suggestedResponse: __nullable__(t.String()),  // Nullable
   summary: __nullable__(t.String()),  // Nullable
   sentiment: __nullable__(Sentiment),  // Enum + nullable
   createdAt: t.Date(),

@@ -1,95 +1,192 @@
+// import { Elysia, t } from 'elysia';
 // import { prisma } from '../lib/prisma';
-// import { WSContext } from '@elysiajs/websocket';
-// import { ChatMessageSchema, ChatBroadcastSchema } from '../schemas';
+// import { jwtPlugin, authMiddleware } from '../middleware/authMiddleware';
 
-// // Store active connections: Map<complaintId, Set<WebSocket>>
-// const rooms = new Map<number, Set<WebSocket>>();
+// export const chatRoutes = new Elysia({ prefix: '/chat' })
+//   .use(jwtPlugin)
+//   .derive(authMiddleware)
 
-// export const handleChatConnection = {
-//   open: async (ws: WSContext<{ params: { complaintId: string }; user: { id: number; role: string } }>) => {
-//     const complaintId = parseInt(ws.params.complaintId);
-//     const { user } = ws;
+//   // Get all messages for a specific complaint
+//   .get('/:complaintId', async ({ params, user }) => {
+//     if (!user) throw new Error('Unauthorized');
 
-//     // Validate complaint exists
-//     const complaint = await prisma.complaint.findUnique({ where: { id: complaintId } });
+//     const complaintId = parseInt(params.complaintId);
+    
+//     // Check if parsing succeeded
+//     if (isNaN(complaintId)) {
+//       throw new Error('Invalid complaint ID');
+//     }
+
+//     // Validate complaint exists and user has access
+//     const complaint = await prisma.complaint.findUnique({
+//       where: { id: complaintId },
+//       select: { 
+//         id: true,
+//         userId: true, 
+//         assignedAgentId: true,
+//         status: true
+//       }
+//     });
+
 //     if (!complaint) {
-//       ws.close(1008, 'Complaint not found');
-//       return;
+//       throw new Error('Complaint not found');
 //     }
 
 //     // Access check
-//     if (user.role === 'USER' && complaint.userId !== user.id) {
-//       ws.close(1008, 'Forbidden');
-//       return;
-//     } else if (!['AGENT', 'LEAD_AGENT'].includes(user.role)) {
-//       ws.close(1008, 'Forbidden');
-//       return;
+//     const isUser = user.role === 'USER' && complaint.userId === user.id;
+//     const isAssignedAgent = (user.role === 'AGENT' || user.role === 'LEAD_AGENT') && 
+//                             complaint.assignedAgentId === user.id;
+//     const isLeadAgent = user.role === 'LEAD_AGENT';
+
+//     if (!isUser && !isAssignedAgent && !isLeadAgent) {
+//       throw new Error('Forbidden: You do not have access to this complaint');
 //     }
 
-//     // Add to room
-//     if (!rooms.has(complaintId)) rooms.set(complaintId, new Set());
-//     rooms.get(complaintId)!.add(ws);
-
-//     // Broadcast join
-//     broadcast(complaintId, { type: 'userJoined', userId: user.id }, ws);
-//   },
-
-//   message: async (ws: WSContext<{ params: { complaintId: string }; user: { id: number; role: string } }>, message: string) => {
-//     const complaintId = parseInt(ws.params.complaintId);
-//     const { user } = ws;
-
-//     try {
-//       const data = JSON.parse(message);
-//       if (!ChatMessageSchema.safeParse(data).success) {
-//         ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
-//         return;
-//       }
-
-//       // Save to DB
-//       const newMessage = await prisma.message.create({
-//         data: {
-//           complaintId,
-//           senderId: user.id,
-//           senderRole: user.role === 'USER' ? 'USER' : 'AGENT',
-//           content: data.content
+//     // Get all messages
+//     const messages = await prisma.message.findMany({
+//       where: { complaintId },
+//       orderBy: { createdAt: 'asc' },
+//       include: {
+//         sender: {
+//           select: {
+//             id: true,
+//             name: true,
+//             role: true
+//           }
 //         }
+//       }
+//     });
+
+//     return { messages, complaint };
+//   }, {
+//     detail: { summary: 'Get all messages for a complaint' },
+//     params: t.Object({ complaintId: t.String() })
+//   })
+
+//   // Send a message to a complaint
+//   .post('/:complaintId/message', async ({ params, body, user }) => {
+//     if (!user) throw new Error('Unauthorized');
+
+//     const complaintId = parseInt(params.complaintId);
+    
+//     if (isNaN(complaintId)) {
+//       throw new Error('Invalid complaint ID');
+//     }
+
+//     // Validate complaint exists and check access
+//     const complaint = await prisma.complaint.findUnique({
+//       where: { id: complaintId },
+//       select: { 
+//         id: true,
+//         userId: true, 
+//         assignedAgentId: true, 
+//         status: true 
+//       }
+//     });
+
+//     if (!complaint) {
+//       throw new Error('Complaint not found');
+//     }
+
+//     // Cannot send to resolved complaints
+//     if (complaint.status === 'RESOLVED') {
+//       throw new Error('Cannot send messages to a resolved complaint');
+//     }
+
+//     // Access check
+//     const isUser = user.role === 'USER' && complaint.userId === user.id;
+//     const isAssignedAgent = (user.role === 'AGENT' || user.role === 'LEAD_AGENT') && 
+//                             complaint.assignedAgentId === user.id;
+
+//     if (!isUser && !isAssignedAgent) {
+//       throw new Error('Forbidden: You do not have access to this complaint');
+//     }
+
+//     // Determine sender role
+//     const senderRole: 'USER' | 'AGENT' = user.role === 'USER' ? 'USER' : 'AGENT';
+
+//     // Create message
+//     const message = await prisma.message.create({
+//       data: {
+//         complaintId,
+//         senderId: user.id,
+//         senderRole,
+//         content: body.content
+//       },
+//       include: {
+//         sender: {
+//           select: {
+//             id: true,
+//             name: true,
+//             role: true
+//           }
+//         }
+//       }
+//     });
+
+//     return { 
+//       message: 'Message sent successfully', 
+//       data: message 
+//     };
+//   }, {
+//     detail: { summary: 'Send a message to a complaint' },
+//     params: t.Object({ complaintId: t.String() }),
+//     body: t.Object({
+//       content: t.String({ minLength: 1, maxLength: 5000 })
+//     })
+//   })
+
+//   // Get recent conversations (for inbox/list view)
+//   .get('/conversations', async ({ user }) => {
+//     if (!user) throw new Error('Unauthorized');
+
+//     let complaints;
+
+//     if (user.role === 'USER') {
+//       // Get user's complaints with latest message
+//       complaints = await prisma.complaint.findMany({
+//         where: { userId: user.id },
+//         include: {
+//           messages: {
+//             orderBy: { createdAt: 'desc' },
+//             take: 1,
+//             include: {
+//               sender: {
+//                 select: { id: true, name: true, role: true }
+//               }
+//             }
+//           },
+//           assignedAgent: {
+//             select: { id: true, name: true, role: true }
+//           }
+//         },
+//         orderBy: { createdAt: 'desc' }
 //       });
-
-//       // Broadcast
-//       broadcast(complaintId, {
-//         type: 'message',
-//         id: newMessage.id,
-//         sender: newMessage.senderRole,
-//         content: newMessage.content,
-//         createdAt: newMessage.createdAt.toISOString()
+//     } else {
+//       // Get agent's assigned complaints with latest message
+//       complaints = await prisma.complaint.findMany({
+//         where: { 
+//           assignedAgentId: user.id 
+//         },
+//         include: {
+//           messages: {
+//             orderBy: { createdAt: 'desc' },
+//             take: 1,
+//             include: {
+//               sender: {
+//                 select: { id: true, name: true, role: true }
+//               }
+//             }
+//           },
+//           user: {
+//             select: { id: true, name: true, email: true }
+//           }
+//         },
+//         orderBy: { createdAt: 'desc' }
 //       });
-//     } catch (error) {
-//       ws.send(JSON.stringify({ type: 'error', message: 'Failed to send message' }));
-//     }
-//   },
-
-//   close: (ws: WSContext<{ params: { complaintId: string }; user: { id: number; role: string } }>) => {
-//     const complaintId = parseInt(ws.params.complaintId);
-//     const { user } = ws;
-
-//     const room = rooms.get(complaintId);
-//     if (room) {
-//       room.delete(ws);
-//       if (room.size === 0) rooms.delete(complaintId);
 //     }
 
-//     broadcast(complaintId, { type: 'userLeft', userId: user.id });
-//   }
-// };
-
-// // Helper: Broadcast to room
-// function broadcast(complaintId: number, data: typeof ChatBroadcastSchema.static, excludeWs?: WebSocket) {
-//   const room = rooms.get(complaintId);
-//   if (!room) return;
-//   const message = JSON.stringify(data);
-//   room.forEach(client => {
-//     if (client !== excludeWs && client.readyState === WebSocket.OPEN) {
-//       client.send(message);
-//     }
+//     return { conversations: complaints };
+//   }, {
+//     detail: { summary: 'Get all conversations (complaints with latest message)' }
 //   });
-// }

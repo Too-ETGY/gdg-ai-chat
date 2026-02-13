@@ -6,14 +6,8 @@ export const analyticsRoutes = new Elysia({ prefix: '/analytics' })
   .use(jwtPlugin)
   .derive(authMiddleware)
 
-  .get('/me', ({ user }) => {
-    // console.log('User in /me:', user);  // Should now show the user object
-    if (!user) throw new Error('Unauthorized1');
-    return { id: user.id, role: user.role };
-  })  
-
   .get(
-    '/sentiment',
+    '/',
     async (ctx) => {
       const { user } = ctx;
 
@@ -40,4 +34,11 @@ export const analyticsRoutes = new Elysia({ prefix: '/analytics' })
         trends: t.Record(t.String(), t.Number())
       })
     }
-  );
+  )
+
+  .get('/me', ({ user }) => {
+    // console.log('User in /me:', user);  // Should now show the user object
+    if (!user) throw new Error('Unauthorized1');
+    return { id: user.id, role: user.role };
+  });
+

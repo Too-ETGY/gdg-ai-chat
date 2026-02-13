@@ -72,7 +72,7 @@ export async function autoResolveOldComplaints() {
             classification: aiAnalysis.classification,
             summary: aiAnalysis.summary,
             sentiment: aiAnalysis.sentiment as 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE',
-            suggestedResponse: aiAnalysis.suggestedResponse
+            // suggestedResponse: aiAnalysis.suggestedResponse
           }
         });
       }

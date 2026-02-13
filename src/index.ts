@@ -5,11 +5,14 @@ import { authRoutes } from './routes/authRoutes';
 import { analyticsRoutes } from './routes/analyticsRoutes';
 import { complaintRoutes } from './routes/complaintsRoutes';
 import { chatRoutes } from './routes/chatRoutes';
-import { startCleanupJob } from './servives/chatCleanUp';
+import { startCleanupJob } from './services/chatCleanUp';
 
 const app = new Elysia()
   .use(swagger({ path: '/docs' }))  // OpenAPI docs at /docs
   .use(cors())
+  
+  .get('/', () => 'Konek bos!!')
+
   .use(authRoutes)
   .use(analyticsRoutes)
   .use(complaintRoutes)
