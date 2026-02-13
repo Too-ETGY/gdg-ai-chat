@@ -9,7 +9,6 @@ import {
   ComplaintResponseSchema, 
   ComplaintListResponseSchema, 
 } from '../schemas';
-import { SenderRole } from '../generated/prisma/enums';
 
 export const complaintRoutes = new Elysia({ prefix: '/complaints' })
   .use(jwtPlugin)
