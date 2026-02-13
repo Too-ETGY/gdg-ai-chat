@@ -9,6 +9,7 @@ import {
   ComplaintResponseSchema, 
   ComplaintListResponseSchema, 
 } from '../schemas';
+import { SenderRole } from '../generated/prisma/enums';
 
 export const complaintRoutes = new Elysia({ prefix: '/complaints' })
   .use(jwtPlugin)
@@ -123,7 +124,7 @@ export const complaintRoutes = new Elysia({ prefix: '/complaints' })
 
     // Run AI analysis on the full conversation
     const aiAnalysis = await analyzeResolution(
-      messages.map(m => ({ senderRole: m.senderRole, content: m.content })),
+      messages.map((m: { senderRole: 'USER' | 'AGENT', content: string }) => ({ senderRole: m.senderRole, content: m.content })),
       complaint.category ?? null,
       'USER'
     );

@@ -62,7 +62,7 @@ export async function autoResolveOldComplaints() {
       if (!complaint.result) {
         // Run AI analysis on this complaint's conversation
         const aiAnalysis = await analyzeResolution(
-          complaint.messages.map(m => ({ senderRole: m.senderRole, content: m.content })),
+          complaint.messages.map((m: { senderRole: 'USER' | 'AGENT', content: string }) => ({ senderRole: m.senderRole, content: m.content })),
           complaint.category ?? null,
           'SYSTEM'
         );
