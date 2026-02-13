@@ -81,7 +81,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
 
     // Call AI service
     const { summary, suggestedResponses } = await summarizeMessages(
-      messages.map(m => ({ senderRole: m.senderRole, content: m.content })),
+      messages.map((m: { senderRole: 'USER' | 'AGENT', content: string }) => ({ senderRole: m.senderRole, content: m.content })),
       complaint.category ?? null
     );
 
@@ -89,7 +89,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       summary,
       suggestedResponses,
       messageCount: messages.length,
-      messageIds: messages.map(m => m.id)
+      messageIds: messages.map((m: { id: number }) => m.id)
     };
   }, {
     detail: { summary: 'Summarize selected messages + get suggested response (AGENT/LEAD_AGENT only, stateless)' },
